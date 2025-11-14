@@ -14,22 +14,19 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20   # Adjust if your project uses a different version
+        node-version: 20
 
     - name: Install dependencies
       run: npm install
-      
-    - name: Install dependencies
-      run: electron-builder --win
 
     - name: Build renderer (Vite + React)
-      run: npm run build   # Adjust if your Vite build script has a different name
+      run: npm run build
 
     - name: Make distributable (Electron Forge)
-      run: npm run make    # Ensure your package.json has a "make" script for Electron Forge
+      run: npm run make
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: electron-app-windows
-        path: out/make/    # Default output directory for Electron Forge
+        path: out/make/      # Electron Forge output folder
