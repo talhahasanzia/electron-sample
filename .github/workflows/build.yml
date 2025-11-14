@@ -1,0 +1,32 @@
+name: Build Electron App for Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20   # Adjust if your project uses a different version
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build renderer (Vite + React)
+      run: npm run build   # Adjust if your Vite build script has a different name
+
+    - name: Make distributable (Electron Forge)
+      run: npm run make    # Ensure your package.json has a "make" script for Electron Forge
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: electron-app-windows
+        path: out/make/    # Default output directory for Electron Forge
