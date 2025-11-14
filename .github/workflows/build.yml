@@ -1,7 +1,9 @@
 name: Build Electron App for Windows
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"   # Runs when you push a version tag (example: v1.0.0)
 
 jobs:
   build-windows:
@@ -29,8 +31,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: electron-app-windows
-        path: out/make/      # Electron Forge output folder
-        
+        path: out/make/
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
@@ -40,4 +42,3 @@ jobs:
           out/make/squirrel.windows/x64/RELEASES
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
