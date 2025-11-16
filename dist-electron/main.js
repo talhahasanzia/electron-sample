@@ -1,47 +1,95 @@
-import { app as o, BrowserWindow as t } from "electron";
-import { fileURLToPath as l } from "node:url";
-import n from "node:path";
-const s = n.dirname(l(import.meta.url));
-process.env.APP_ROOT = n.join(s, "..");
-const i = process.env.VITE_DEV_SERVER_URL, u = n.join(process.env.APP_ROOT, "dist-electron"), r = n.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = i ? n.join(process.env.APP_ROOT, "public") : r;
-let e;
-const a = o.requestSingleInstanceLock();
-a ? o.on("second-instance", (d, m, p) => {
-  e && (e.isMinimized() && e.restore(), e.focus());
-}) : o.quit();
-function c() {
-  if (e && !e.isDestroyed()) {
-    e.focus();
+import { app, BrowserWindow, Menu, shell } from "electron";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
+process.env.APP_ROOT = path.join(__dirname$1, "..");
+const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
+const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
+const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+let win;
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, _commandLine, _workingDirectory) => {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
+}
+function createWindow() {
+  if (win && !win.isDestroyed()) {
+    win.focus();
     return;
   }
-  e = new t({
+  win = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    maximizable: !0,
-    minimizable: !0,
-    fullscreenable: !0,
-    icon: n.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    maximizable: true,
+    minimizable: true,
+    autoHideMenuBar: true,
+    fullscreenable: true,
+    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: n.join(s, "preload.mjs")
+      preload: path.join(__dirname$1, "preload.mjs"),
+      devTools: false
+      // Disable dev tools
     }
-  }), e.maximize(), e.on("closed", () => {
-    e = null;
-  }), e.webContents.on("did-finish-load", () => {
-    e == null || e.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  }), i ? e.loadURL(i) : e.loadFile(n.join(r, "index.html"));
+  });
+  win.maximize();
+  win.on("closed", () => {
+    win = null;
+  });
+  win.webContents.on("did-finish-load", () => {
+    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  });
+  if (VITE_DEV_SERVER_URL) {
+    win.loadURL(VITE_DEV_SERVER_URL);
+  } else {
+    win.loadFile(path.join(RENDERER_DIST, "index.html"));
+  }
 }
-o.on("window-all-closed", () => {
-  process.platform !== "darwin" && (o.quit(), e = null);
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+    win = null;
+  }
 });
-o.on("activate", () => {
-  t.getAllWindows().length === 0 && c();
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 });
-o.whenReady().then(c);
+app.whenReady().then(() => {
+  const menuTemplate = [
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "Contact us",
+          click: async () => {
+            await shell.openExternal("https://github.com/talhahasanzia");
+          }
+        },
+        {
+          label: "Quit",
+          click: () => {
+            app.quit();
+          }
+        }
+      ]
+    }
+  ];
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+  createWindow();
+});
 export {
-  u as MAIN_DIST,
-  r as RENDERER_DIST,
-  i as VITE_DEV_SERVER_URL
+  MAIN_DIST,
+  RENDERER_DIST,
+  VITE_DEV_SERVER_URL
 };

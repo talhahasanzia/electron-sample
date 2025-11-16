@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, Menu, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -56,12 +56,16 @@ function createWindow() {
     minHeight: 600,
     maximizable: true,
     minimizable: true,
+    autoHideMenuBar: true,
     fullscreenable: true,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
+      devTools: false, // Disable dev tools
     },
   })
+
+ 
 
   // Maximize window on start
   win.maximize()
@@ -102,4 +106,27 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  const menuTemplate = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Contact us',
+          click: async () => {
+            await shell.openExternal('https://github.com/talhahasanzia');
+          }
+        },
+        {
+          label: 'Quit',
+          click: () => {
+            app.quit();
+          }
+        }
+      ]
+    }
+  ];
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+  createWindow()
+})
