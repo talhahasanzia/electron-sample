@@ -77,9 +77,6 @@ export default function FormsList({ createdBy, onSignOut, onCreateNew }: Props) 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Form Submissions</Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <Typography variant="body2">
-            Signed in as <strong>{createdBy}</strong>
-          </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -169,6 +166,12 @@ export default function FormsList({ createdBy, onSignOut, onCreateNew }: Props) 
         <Button size="small" onClick={loadSubmissions}>
           Refresh
         </Button>
+      </Box>
+
+      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          Signed in as <strong>{createdBy}</strong>
+        </Typography>
       </Box>
 
       <FormDetails

@@ -57,7 +57,13 @@ export default function FormDetails({ submission, open, onClose }: Props) {
             onClick={handlePrint}
             color="primary"
             aria-label="print"
-            sx={{ mt: -1 }}
+            className="no-print"
+            sx={{
+              mt: -1,
+              '@media print': {
+                display: 'none'
+              }
+            }}
           >
             <PrintIcon sx={{ fontSize: 32 }} />
           </IconButton>
@@ -219,7 +225,13 @@ export default function FormDetails({ submission, open, onClose }: Props) {
         </Box>
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions
+        sx={{
+          '@media print': {
+            display: 'none'
+          }
+        }}
+      >
         <Button onClick={onClose} variant="contained">
           Close
         </Button>
