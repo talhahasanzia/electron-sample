@@ -176,6 +176,43 @@ ipcMain.handle('clear-submissions', async () => {
   }
 })
 
+ipcMain.handle('print-to-pdf', async (_event) => {
+  try {
+    if (!win) {
+      return { success: false, error: 'Window not found' }
+    }
+
+    // Generate PDF from current window
+    const pdfData = await win.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4',
+      margins: {
+        top: 0.5,
+        bottom: 0.5,
+        left: 0.5,
+        right: 0.5
+      }
+    })
+
+    // Create a temporary file path
+    const os = await import('os')
+    const fs = await import('fs/promises')
+    const timestamp = Date.now()
+    const pdfPath = path.join(os.tmpdir(), `form-${timestamp}.pdf`)
+
+    // Write PDF to file
+    await fs.writeFile(pdfPath, pdfData)
+
+    // Open the PDF with default system viewer
+    await shell.openPath(pdfPath)
+
+    return { success: true, path: pdfPath }
+  } catch (error) {
+    console.error('Error generating PDF:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
 app.whenReady().then(() => {
   const isMac = process.platform === 'darwin'
 

@@ -39,4 +39,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSubmission: (submission: FormSubmission) => ipcRenderer.invoke('save-submission', submission),
   getSubmissions: () => ipcRenderer.invoke('get-submissions'),
   clearSubmissions: () => ipcRenderer.invoke('clear-submissions'),
+  printToPDF: () => ipcRenderer.invoke('print-to-pdf'),
 })

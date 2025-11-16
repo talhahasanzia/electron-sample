@@ -23,5 +23,6 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
 electron.contextBridge.exposeInMainWorld("electronAPI", {
   saveSubmission: (submission) => electron.ipcRenderer.invoke("save-submission", submission),
   getSubmissions: () => electron.ipcRenderer.invoke("get-submissions"),
-  clearSubmissions: () => electron.ipcRenderer.invoke("clear-submissions")
+  clearSubmissions: () => electron.ipcRenderer.invoke("clear-submissions"),
+  printToPDF: () => electron.ipcRenderer.invoke("print-to-pdf")
 });

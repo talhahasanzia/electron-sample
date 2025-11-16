@@ -24,21 +24,44 @@ export default function FormDetails({ submission, open, onClose }: Props) {
     ? REASON_CONFIGS.find((r) => r.key === submission.reasonType)
     : undefined
 
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString()
   }
 
-  const handlePrint = () => {
-    window.print()
+  const handlePrint = async () => {
+    try {
+      const result = await window.electronAPI.printToPDF()
+      if (!result.success) {
+        console.error('Failed to generate PDF:', result.error)
+        alert('Failed to generate PDF: ' + (result.error || 'Unknown error'))
+      }
+      // PDF is automatically opened by the main process
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Error generating PDF: ' + error)
+    }
   }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Typography variant="h5">Form Details</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {reasonConfig?.label || submission.reasonType || 'Unknown Type'}
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="h5">Entrifi</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {reasonConfig?.label || submission.reasonType || 'Unknown Type'}
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={handlePrint}
+            color="primary"
+            aria-label="print"
+            sx={{ mt: -1 }}
+          >
+            <PrintIcon sx={{ fontSize: 32 }} />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent dividers>
@@ -197,19 +220,9 @@ export default function FormDetails({ submission, open, onClose }: Props) {
       </DialogContent>
 
       <DialogActions>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-          <IconButton
-            onClick={handlePrint}
-            color="primary"
-            aria-label="print"
-            sx={{ ml: 1 }}
-          >
-            <PrintIcon />
-          </IconButton>
-          <Button onClick={onClose} variant="contained">
-            Close
-          </Button>
-        </Box>
+        <Button onClick={onClose} variant="contained">
+          Close
+        </Button>
       </DialogActions>
     </Dialog>
   )
