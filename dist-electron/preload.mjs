@@ -20,3 +20,8 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   // You can expose other APTs you need here.
   // ...
 });
+electron.contextBridge.exposeInMainWorld("electronAPI", {
+  saveSubmission: (submission) => electron.ipcRenderer.invoke("save-submission", submission),
+  getSubmissions: () => electron.ipcRenderer.invoke("get-submissions"),
+  clearSubmissions: () => electron.ipcRenderer.invoke("clear-submissions")
+});

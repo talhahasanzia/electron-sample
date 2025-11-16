@@ -1,8 +1,31 @@
-import { app, BrowserWindow, Menu, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import Store from 'electron-store'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Initialize electron-store for persistent data
+interface FormSubmission {
+  serialNumber: string
+  createdBy: string
+  createdFor: string
+  reasonType?: string
+  amount?: number
+  creationReason?: string
+  extraFields?: Record<string, any>
+  timestamp: number
+}
+
+interface StoreSchema {
+  submissions: FormSubmission[]
+}
+
+const store = new Store<StoreSchema>({
+  defaults: {
+    submissions: []
+  }
+})
 
 // The built directory structure
 //
@@ -15,9 +38,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // │
 process.env.APP_ROOT = path.join(__dirname, '..')
 
+// Set a friendly application name (used on macOS menus / app switcher)
+app.name = 'Entrifi'
+
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
-export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
@@ -58,6 +83,8 @@ function createWindow() {
     minimizable: true,
     autoHideMenuBar: true,
     fullscreenable: true,
+    // use a visible app title
+    title: 'Entrifi',
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
@@ -78,6 +105,16 @@ function createWindow() {
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
+
+    // Ensure the native window title is empty (renderer may set document.title)
+    try {
+      // set the native title to the app name
+      win?.setTitle('Entrifi')
+      // Also set the HTML document title in the renderer to the app name
+      win?.webContents.executeJavaScript("document.title = 'Entrifi'", true).catch(() => {})
+    } catch (e) {
+      // ignore failures setting title
+    }
   })
 
   if (VITE_DEV_SERVER_URL) {
@@ -106,8 +143,63 @@ app.on('activate', () => {
   }
 })
 
+// IPC Handlers for form data persistence
+ipcMain.handle('save-submission', async (_event, submission: FormSubmission) => {
+  try {
+    const submissions = store.get('submissions', [])
+    submissions.push(submission)
+    store.set('submissions', submissions)
+    return { success: true }
+  } catch (error) {
+    console.error('Error saving submission:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('get-submissions', async () => {
+  try {
+    const submissions = store.get('submissions', [])
+    return { success: true, data: submissions }
+  } catch (error) {
+    console.error('Error getting submissions:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
+ipcMain.handle('clear-submissions', async () => {
+  try {
+    store.set('submissions', [])
+    return { success: true }
+  } catch (error) {
+    console.error('Error clearing submissions:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
 app.whenReady().then(() => {
-  const menuTemplate = [
+  const isMac = process.platform === 'darwin'
+
+  const menuTemplate: any[] = [
+    // macOS application menu
+    ...(isMac
+      ? [
+          {
+            label: app.name || 'Entrifi',
+            submenu: [
+              { role: 'about', label: `About ${app.name || 'Entrifi'}` },
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit', label: `Quit ${app.name || 'Entrifi'}` },
+            ],
+          },
+        ]
+      : []),
+
     {
       label: 'File',
       submenu: [
@@ -126,7 +218,7 @@ app.whenReady().then(() => {
       ]
     }
   ];
-  const menu = Menu.buildFromTemplate(menuTemplate);
+  const menu = Menu.buildFromTemplate(menuTemplate as any);
   Menu.setApplicationMenu(menu);
   createWindow()
 })

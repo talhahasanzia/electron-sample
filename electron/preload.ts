@@ -22,3 +22,21 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   // You can expose other APTs you need here.
   // ...
 })
+
+// Expose typed API for form submissions
+interface FormSubmission {
+  serialNumber: string
+  createdBy: string
+  createdFor: string
+  reasonType?: string
+  amount?: number
+  creationReason?: string
+  extraFields?: Record<string, any>
+  timestamp: number
+}
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  saveSubmission: (submission: FormSubmission) => ipcRenderer.invoke('save-submission', submission),
+  getSubmissions: () => ipcRenderer.invoke('get-submissions'),
+  clearSubmissions: () => ipcRenderer.invoke('clear-submissions'),
+})
